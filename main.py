@@ -1,35 +1,7 @@
 import numpy as np
-import jax
-from jax import numpy as jnp
 import matplotlib.pyplot as plt
 
-
-def model(inputs, W, b):
-    return jnp.matmul(inputs, W) + b
-
-
-def mean_squared_error(targets, predictions):
-    per_sample_losses = jnp.square(targets - predictions)
-    return jnp.mean(per_sample_losses)
-
-
-def compute_loss(state, inputs, targets):
-    W, b = state
-    predictions = model(inputs, W, b)
-    loss = mean_squared_error(targets, predictions)
-    return loss
-
-learning_rate = 0.1
-grad_fn = jax.value_and_grad(compute_loss)
-
-
-@jax.jit
-def training_step(inputs, targets, W, b):
-    loss, grads = grad_fn((W, b), inputs, targets)
-    grad_wrt_W, grad_wrt_b = grads
-    W = W - grad_wrt_W * learning_rate
-    b = b - grad_wrt_b * learning_rate
-    return loss, W, b
+import linear_classifier_with_jax as linear_classifier
 
 
 if __name__ == '__main__':
@@ -52,17 +24,18 @@ if __name__ == '__main__':
     input_dim = 2
     output_dim = 1
 
-    W = jax.numpy.array(np.random.uniform(size=(input_dim, output_dim)))
-    b = jax.numpy.array(np.zeros(shape=(output_dim,)))
+    W, b = linear_classifier.get_initializers(input_dim, output_dim)
     state = (W, b)
+
     for step in range(40):
-        loss, W, b = training_step(inputs, targets, W, b)
+        loss, W, b = linear_classifier.training_step(inputs, targets, W, b)
+        state = (W, b)
         print(f"Loss at step {step + 1}: {loss:.4f}")
 
     plt.scatter(inputs[:, 0], inputs[:, 1], c=targets[:, 0])
     plt.show()
 
-    predictions = model(inputs, W, b)
+    predictions = linear_classifier.model(inputs, W, b)
     x = np.linspace(-1, 4, 100)
     y = -W[0] / W[1] * x + (0.5 - b) / W[1]
     plt.plot(x, y, "-r")
